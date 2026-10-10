@@ -1,0 +1,37 @@
+name: digest
+on:
+  schedule:
+    # Mondays and Thursdays at 16:00 UTC.
+    - cron: '0 16 * * 1,4'
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency: digest
+jobs:
+  digest:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v7
+      # Claude Code CLI for the picking step, on the Claude subscription (token from `claude setup-token`).
+      - run: npm install -g @anthropic-ai/claude-code@2.1.296
+      - run: python3 scout.py
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          CLAUDE_CODE_OAUTH_TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          EVENT_SCOUT_CONFIG: ${{ secrets.EVENT_SCOUT_CONFIG }} # profile + cities (personal, so not in the repo)
+      # Commit state through the GitHub API: GitHub signs these commits itself, so they show as Verified.
+      - name: Save state
+        if: always()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          git diff --quiet -- seen.json && exit 0
+          jq -n --arg repo "$GITHUB_REPOSITORY" --arg branch "$GITHUB_REF_NAME" --arg head "$(git rev-parse HEAD)" \
+            --arg a "$(base64 -w0 seen.json)" \
+            '{query: "mutation($input: CreateCommitOnBranchInput!) { createCommitOnBranch(input: $input) { commit { url } } }",
+              variables: {input: {branch: {repositoryNameWithOwner: $repo, branchName: $branch},
+                message: {headline: "chore: update sent events"}, expectedHeadOid: $head,
+                fileChanges: {additions: [{path: "seen.json", contents: $a}]}}}}' \
+            | gh api graphql --input -

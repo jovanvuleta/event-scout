@@ -1,0 +1,13 @@
+{
+  "days_ahead": 10,
+  "max_picks": 8,
+  "profile": "Describe yourself and what you'd like to attend, e.g.: Software engineer in Lisbon. Wants events to meet people and learn something new: jazz and electronic music (no metal), tech meetups, language exchanges, stand-up, day trips. Prefers in-person events.",
+  "cities": [
+    {
+      "name": "Lisbon",
+      "tz": "Europe/Lisbon",
+      "songkick": "<metro id from the city page URL, songkick.com/metro-areas/<id>>",
+      "meetup": "pt--Lisbon"
+    }
+  ]
+}

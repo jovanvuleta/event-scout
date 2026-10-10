@@ -1,0 +1,4 @@
+__pycache__/
+.venv/
+# personal: profile and cities; Actions reads them from the EVENT_SCOUT_CONFIG secret
+config.json
